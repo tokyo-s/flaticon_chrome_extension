@@ -126,18 +126,18 @@ async function performSearch(query, page = 1) {
     allIcons = [];
     currentPage = 1;
     hasMoreResults = true;
-    showLoading(true);
-    hideError();
+  showLoading(true);
+  hideError();
   } else {
     isLoading = true;
     showLoadingMore(true);
   }
   
-  try {
+    try {
     const icons = await fetchIconsFromFlaticon(query, page);
     console.log('📦 Found', icons.length, 'icons for page', page);
-    
-    if (icons.length > 0) {
+      
+      if (icons.length > 0) {
       if (page === 1) {
         allIcons = icons;
         displayIcons(allIcons);
@@ -154,13 +154,13 @@ async function performSearch(query, page = 1) {
         showEmptyState();
       }
       hasMoreResults = false;
-    }
-  } catch (error) {
-    console.error('💥 Search error:', error);
+      }
+    } catch (error) {
+      console.error('💥 Search error:', error);
     if (page === 1) {
       showError();
     }
-  } finally {
+    } finally {
     if (page === 1) {
       showLoading(false);
     } else {
@@ -219,6 +219,12 @@ async function fetchIconsFromFlaticon(query, page) {
           id: icon.id,
           title: icon.description || icon.slug || query,
           imageUrl: icon.images?.['64'] || `https://cdn-icons-png.flaticon.com/64/${icon.id}/${icon.id}.png`,
+          highResUrls: [
+            icon.images?.['512'] || `https://cdn-icons-png.flaticon.com/512/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+            icon.images?.['256'] || `https://cdn-icons-png.flaticon.com/256/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+            icon.images?.['128'] || `https://cdn-icons-png.flaticon.com/128/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+            icon.images?.['64'] || `https://cdn-icons-png.flaticon.com/64/${Math.floor(icon.id / 1000)}/${icon.id}.png`
+          ],
           flaticonUrl: `https://www.flaticon.com/free-icon/${icon.slug || 'icon'}_${icon.id}`
         }));
       }
@@ -246,7 +252,13 @@ function extractIconsFromHTML(html, query) {
         icons.push({
           id: id,
           title: title || query,
-          imageUrl: imageUrl.replace(/\/\d+\//, '/64/'), // Ensure 64px size
+          imageUrl: imageUrl.replace(/\/\d+\//, '/64/'), // Ensure 64px size for display
+          highResUrls: [
+            imageUrl.replace(/\/\d+\//, '/512/'), // 512px
+            imageUrl.replace(/\/\d+\//, '/256/'), // 256px
+            imageUrl.replace(/\/\d+\//, '/128/'), // 128px
+            imageUrl.replace(/\/\d+\//, '/64/')   // 64px
+          ],
           flaticonUrl: `https://www.flaticon.com/free-icon/${title.toLowerCase().replace(/\s+/g, '-')}_${id}`
         });
       }
@@ -261,6 +273,12 @@ function extractIconsFromHTML(html, query) {
           id: id,
           title: description || query,
           imageUrl: imageUrl,
+          highResUrls: [
+            imageUrl.replace(/\/\d+\//, '/512/'), // 512px
+            imageUrl.replace(/\/\d+\//, '/256/'), // 256px  
+            imageUrl.replace(/\/\d+\//, '/128/'), // 128px
+            imageUrl                              // Original resolution
+          ],
           flaticonUrl: `https://www.flaticon.com/free-icon/${description.toLowerCase().replace(/\s+/g, '-')}_${id}`
         });
       }
@@ -486,8 +504,13 @@ function generateRealFlaticonIcons(query, page = 1) {
     id: icon.id,
     title: icon.name,
     imageUrl: `https://cdn-icons-png.flaticon.com/64/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
-    flaticonUrl: `https://www.flaticon.com/free-icon/${icon.name.toLowerCase().replace(/\s+/g, '-')}_${icon.id}`,
-    fallbackUrl: `https://cdn-icons-png.flaticon.com/512/${Math.floor(icon.id / 1000)}/${icon.id}.png`
+    highResUrls: [
+      `https://cdn-icons-png.flaticon.com/512/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+      `https://cdn-icons-png.flaticon.com/256/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+      `https://cdn-icons-png.flaticon.com/128/${Math.floor(icon.id / 1000)}/${icon.id}.png`,
+      `https://cdn-icons-png.flaticon.com/64/${Math.floor(icon.id / 1000)}/${icon.id}.png`
+    ],
+    flaticonUrl: `https://www.flaticon.com/free-icon/${icon.name.toLowerCase().replace(/\s+/g, '-')}_${icon.id}`
   }));
 }
 
@@ -532,8 +555,8 @@ function createIconElement(icon) {
   // Better fallback system
   img.onerror = function() {
     console.log('Primary image failed, trying fallback:', this.src);
-    if (icon.fallbackUrl && this.src !== icon.fallbackUrl) {
-      this.src = icon.fallbackUrl;
+    if (icon.highResUrls.length > 0 && this.src !== icon.highResUrls[0]) {
+      this.src = icon.highResUrls[0];
     } else {
       // Final fallback to a placeholder
       console.log('All image sources failed, using placeholder');
@@ -548,19 +571,25 @@ function createIconElement(icon) {
   iconDiv.appendChild(img);
   iconDiv.appendChild(nameDiv);
   
-  // Click to open Flaticon
-  iconDiv.addEventListener('click', function() {
+  // Click to copy image data
+  iconDiv.addEventListener('click', async function() {
+    console.log('🖼️ Copying image:', icon.title);
+    try {
+      await copyImageToClipboard(icon.imageUrl, icon.title, icon);
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      // Fallback to copying URL if image copy fails
+      copyToClipboard(icon.imageUrl);
+      showNotification(`⚠️ Copied URL instead (${icon.title})`);
+    }
+  });
+  
+  // Right-click to open Flaticon
+  iconDiv.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
     console.log('🔗 Opening Flaticon for:', icon.title);
     chrome.tabs.create({ url: icon.flaticonUrl });
     window.close();
-  });
-  
-  // Right-click to copy URL
-  iconDiv.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    console.log('📋 Copying URL:', icon.imageUrl);
-    copyToClipboard(icon.imageUrl);
-    showNotification('Image URL copied!');
   });
   
   // Keyboard support
@@ -661,6 +690,61 @@ function openFlaticon(query) {
   window.close();
 }
 
+async function copyImageToClipboard(imageUrl, iconTitle, icon) {
+  console.log('🖼️ Attempting to copy high-resolution image for:', iconTitle);
+  
+  // Try different resolutions starting with highest
+  const urlsToTry = icon.highResUrls || [imageUrl];
+  
+  for (let i = 0; i < urlsToTry.length; i++) {
+    const currentUrl = urlsToTry[i];
+    const resolution = currentUrl.includes('/512/') ? '512px' : 
+                      currentUrl.includes('/256/') ? '256px' : 
+                      currentUrl.includes('/128/') ? '128px' : '64px';
+    
+    try {
+      console.log(`📥 Trying ${resolution} resolution:`, currentUrl);
+      
+      // Fetch the image
+      const response = await fetch(currentUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Convert to blob
+      const blob = await response.blob();
+      console.log(`✅ Image fetched at ${resolution}, size:`, blob.size, 'bytes');
+      
+      // Check if clipboard API is available
+      if (!navigator.clipboard || !navigator.clipboard.write) {
+        throw new Error('Clipboard API not available');
+      }
+      
+      // Create clipboard item
+      const clipboardItem = new ClipboardItem({
+        [blob.type]: blob
+      });
+      
+      // Write to clipboard
+      await navigator.clipboard.write([clipboardItem]);
+      console.log(`✅ High-res image (${resolution}) copied to clipboard`);
+      
+      showNotification(`🖼️ ${iconTitle} copied! (${resolution})`);
+      return; // Success, exit function
+      
+    } catch (error) {
+      console.log(`❌ Failed to copy ${resolution} image:`, error.message);
+      
+      // If this was the last URL to try, throw the error
+      if (i === urlsToTry.length - 1) {
+        console.error('All resolutions failed');
+        throw error;
+      }
+      // Otherwise, continue to next resolution
+    }
+  }
+}
+
 function copyToClipboard(text) {
   try {
     navigator.clipboard.writeText(text).catch(function() {
@@ -703,7 +787,7 @@ window.addEventListener('unhandledrejection', function(e) {
   console.error('💥 Promise rejection:', e.reason);
 });
 
-console.log('📋 Extension script loaded successfully!');
+console.log('📋 Extension script loaded successfully!'); 
 
 function handleScroll() {
   if (isLoading || !hasMoreResults || !currentQuery) return;
