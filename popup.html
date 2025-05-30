@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flaticon Quick Search</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <h2>🎨 Flaticon Search</h2>
+  </div>
+  <div class="search-container">
+    <input id="searchBar" type="text" placeholder="Search for icons..." autocomplete="off" autofocus>
+    <div id="searchHint">Type to search thousands of icons</div>
+    <div id="resultsCounter" class="results-counter hidden"></div>
+  </div>
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <span>Searching...</span>
+  </div>
+  <div id="results" class="results-container"></div>
+  <div id="error" class="error hidden">
+    <p>Unable to fetch icons. <a href="#" id="retryBtn">Try again</a> or <a href="#" id="openFlaticon">search on Flaticon</a></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
