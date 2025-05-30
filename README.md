@@ -8,6 +8,7 @@ A Chrome extension that lets you search Flaticon icons instantly from any websit
 - 🎨 **Beautiful UI**: Modern, responsive design with smooth animations
 - ⚡ **Fast Performance**: Debounced search with smart caching
 - 📱 **Keyboard Support**: Full keyboard navigation support
+- ⌨️ **Quick Access**: Open search with Ctrl+Shift+I (Cmd+Shift+I on Mac)
 - 🔄 **Fallback Options**: Multiple API endpoints and graceful error handling
 - 📋 **Copy Support**: Right-click to copy image URLs
 - 🌐 **Direct Links**: Click icons to open them on Flaticon
@@ -41,6 +42,20 @@ You need to add icon files for the extension. Create PNG files with these exact 
 4. Click any icon to open it on Flaticon
 5. Right-click any icon to copy its image URL
 6. Press Enter in the search bar to open Flaticon search
+
+### 4. Keyboard Shortcuts
+
+**Quick Access Shortcut:**
+- **Windows/Linux**: `Ctrl+Shift+I`
+- **Mac**: `Cmd+Shift+I`
+
+This will instantly open the search popup and automatically focus on the search input, allowing you to start typing immediately.
+
+**Customizing the Shortcut:**
+1. Go to `chrome://extensions/shortcuts` in your browser
+2. Find "Flaticon Quick Search" in the list
+3. Click in the shortcut field and press your preferred key combination
+4. The new shortcut will be saved automatically
 
 ## Technical Details
 
